@@ -72,7 +72,7 @@ sub Post
     my ($title,$pubdate,$content,$siteurl)=@_;
 
     
-
+    $title=~ s/\&/&amp;/g;
     $content =~ s/\n/<p\/>/g;
 
 #	print "publish:" .   $post->{'publish_at'} ."\n";
@@ -82,7 +82,7 @@ sub Post
     my $format= <<END_POST;
 	<item>
 		<title>%s</title>
-		<link>%s/?p=1</link>
+		<link>%s?p=1</link>
 		<pubDate>%s</pubDate>
 		<wp:post_date>%s</wp:post_date>
 		<dc:creator>admin</dc:creator>
@@ -102,7 +102,7 @@ sub Post
 		<wp:post_password></wp:post_password>
 		<wp:is_sticky>0</wp:is_sticky>
 END_POST
-printf($format,$siteurl,$title,$pubdate,$pubdate,$content);
+printf($format,$title,$siteurl,$pubdate,$pubdate,$content);
 }
 
 sub EndPost
@@ -242,16 +242,18 @@ sub Comments {
 }
 
 sub Main {
-
+    my $site_id=shift || die "no site id passed";
     my $dbh = DBI->connect("dbi:Pg:dbname=root", "root", "root") or die "cannot connect";
-    my $ary_ref = $dbh->selectall_arrayref("select a.id, post_id, results, p.site_id from assemblies a join posts p on a.post_id=p.id where kind='encode' and p.site_id=1");
+    my $ary_ref = $dbh->selectall_arrayref("select a.id, post_id, results, p.site_id from assemblies a join posts p on a.post_id=p.id where kind='encode' and p.site_id=${site_id}");
 
-    my $site = $dbh->selectrow_hashref("select name from sites where id = $site_id");
-    my $siteurl = "http://" . $site->{name} . "/";
+    my $siteobj = $dbh->selectrow_hashref("select name from sites where id = $site_id");
+    my $siteurl = "http://" . $siteobj->{name} . ".com/";
 
-    
-    Header($site->{name},$siteurl);
-    
+    warn "Found number of items :". scalar(@{$ary_ref}) . " using site name $siteobj->{name} and url $siteurl" ;
+ 
+    Header($siteobj->{name},$siteurl);
+
+
     foreach my $item (@{$ary_ref}) 
     {
 	my $id = $item->[0];
@@ -307,7 +309,10 @@ sub Main {
     Footer();
 }
 
-Main ();
+my $siteid=shift @ARGV;
+warn "going to run $siteid\n";
+Main ($siteid);
+
 
 
 #see also 
