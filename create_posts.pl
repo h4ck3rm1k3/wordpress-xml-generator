@@ -18,9 +18,10 @@
 
 use DBI;
 use Data::Dumper;
-use YAML::XS (Load);
+use YAML::XS (Load); # apt-get install libyaml-libyaml-perl
 use strict;
 use warnings;
+use Config::Simple; # apt-get install  libconfig-simple-perl
 
 sub Header
 {
@@ -243,7 +244,13 @@ sub Comments {
 
 sub Main {
     my $site_id=shift || die "no site id passed";
-    my $dbh = DBI->connect("dbi:Pg:dbname=root", "root", "root") or die "cannot connect";
+    my $cfg = new Config::Simple('app.ini');
+    
+    my $user = $cfg->param('User')|| die "no user in ini";
+    my $pwd = $cfg->param('Password') || die "no pwd in ini";
+    my $db = $cfg->param('Database') || die "no DB in ini";
+    my $dbh = DBI->connect("dbi:Pg:dbname=$db", $user, $pwd) or die "cannot connect";
+
     my $ary_ref = $dbh->selectall_arrayref("select a.id, post_id, results, p.site_id from assemblies a join posts p on a.post_id=p.id where kind='encode' and p.site_id=${site_id}");
 
     my $siteobj = $dbh->selectrow_hashref("select name from sites where id = $site_id");
