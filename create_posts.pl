@@ -54,17 +54,31 @@ END_HEADER
 
 }
 
+sub Escape {
+    my $tag = shift;
+    $tag=~ s/\&/&amp;/g;
+    $tag=~ s/\'/&quot;/g;
+    return $tag;
+}
+
+sub EscapeName {
+    my $tag = shift;
+    $tag=~ s/\&/_/g;
+    $tag=~ s/\'/_/g;
+    $tag=~ s/\"/_/g;
+    return $tag;
+}
+
 
 sub Tag {
     my $tag=shift;
     my $format_category=<<END_CATEGORY;
     <category domain="post_tag" nicename="%s"><![CDATA[%s]]></category>
 END_CATEGORY
-my $tag1 = $tag;
-    
-    $tag1=~ s/\&/&amp;/g;
 
-printf $format_category,$tag1,$tag;
+my $tag1 = EscapeName($tag);
+    
+    printf $format_category,$tag1,$tag;
 }
 
 
@@ -73,7 +87,8 @@ sub Post
     my ($title,$pubdate,$content,$siteurl)=@_;
 
     
-    $title=~ s/\&/&amp;/g;
+    $title = Escape($title);
+
     $content =~ s/\n/<p\/>/g;
 
 #	print "publish:" .   $post->{'publish_at'} ."\n";
